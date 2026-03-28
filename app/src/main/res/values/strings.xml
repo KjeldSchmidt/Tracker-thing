@@ -1,9 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pain Tracker</string>
-    <string name="notification_channel_name">Pain reminders</string>
-    <string name="notification_channel_description">Reminders to record pain and mental state</string>
-    <string name="notification_title">Pain tracker reminder</string>
-    <string name="notification_body">Time to create a new entry.</string>
-    <string name="export_chooser_title">Export data</string>
+    <string name="app_name">Schmerz-Tracker</string>
+    <string name="notification_channel_name">Schmerz-Erinnerungen</string>
+    <string name="notification_channel_description">Erinnerungen zum Erfassen von Schmerz und mentalem Zustand</string>
+    <string name="notification_title">Schmerz-Tracker Erinnerung</string>
+    <string name="notification_body">Zeit für einen neuen Eintrag.</string>
+    <string name="export_chooser_title">Daten exportieren</string>
+
+    <string name="title_app">Schmerz- &amp; Mentalzustands-Tracker</string>
+    <string name="tab_new_entry">Neuer Eintrag</string>
+    <string name="tab_history">Verlauf</string>
+
+    <string name="label_time_auto_now">Zeit: automatisch (jetzt)</string>
+    <string name="label_pain_1">Schmerz 1</string>
+    <string name="label_pain_intensity">Schmerzstärke</string>
+    <string name="label_pain_2">Schmerz 2</string>
+    <string name="label_pain_type">Schmerzart</string>
+    <string name="label_mental_state">Mentaler Zustand</string>
+    <string name="label_previous_activities">Aktivitäten der letzten Stunden</string>
+    <string name="label_comments">Kommentare</string>
+    <string name="action_save_entry">Eintrag speichern</string>
+
+    <string name="section_reminders">Erinnerungen</string>
+    <string name="label_reminder_time_hint">HH:mm oder HHmm</string>
+    <string name="action_add">Hinzufügen</string>
+    <string name="action_remove">Entfernen</string>
+    <string name="content_desc_remove">Entfernen</string>
+
+    <string name="section_export">Export</string>
+    <string name="action_export_csv">CSV exportieren</string>
+    <string name="action_export_sqlite">SQLite exportieren</string>
+
+    <string name="empty_entries">Noch keine Einträge.</string>
+    <string name="table_time">Zeit</string>
+    <string name="table_pain_1">Schmerz 1</string>
+    <string name="table_pain_2">Schmerz 2</string>
+    <string name="table_mental">Mental</string>
+    <string name="table_activities">Aktivitäten</string>
+    <string name="table_comments">Kommentare</string>
+
+    <string name="message_entry_saved">Eintrag gespeichert</string>
+    <string name="message_time_format_invalid">Uhrzeit im Format HH:mm oder HHmm eingeben</string>
+    <string name="message_time_invalid">Ungültige Uhrzeit</string>
+    <string name="message_reminder_added">Erinnerung hinzugefügt</string>
+    <string name="message_reminder_removed">Erinnerung entfernt</string>
+    <string name="message_export_csv_failed">CSV-Export fehlgeschlagen</string>
+    <string name="message_export_sqlite_failed">SQLite-Export fehlgeschlagen</string>
+    <string name="message_no_share_app">Keine App zum Teilen gefunden</string>
+    <string name="message_export_started">Export gestartet</string>
+    <string name="message_export_failed">Export fehlgeschlagen</string>
 </resources>

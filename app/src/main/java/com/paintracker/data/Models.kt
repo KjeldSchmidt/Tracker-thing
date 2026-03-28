@@ -3,10 +3,10 @@ package com.paintracker.data
 import java.time.Instant
 
 enum class PainLevel(val display: String) {
-    NONE("None"),
-    LIGHT("Light"),
-    MEDIUM("Medium"),
-    STRONG("Strong");
+    NONE("Kein"),
+    LIGHT("Leicht"),
+    MEDIUM("Mittel"),
+    STRONG("Stark");
 
     companion object {
         fun fromName(value: String): PainLevel = runCatching { valueOf(value) }.getOrDefault(NONE)
@@ -14,8 +14,9 @@ enum class PainLevel(val display: String) {
 }
 
 enum class PainType(val display: String) {
-    CONTINUOUS("Continuous"),
-    INTERMITTENT("Intermittent");
+    NOT_APPLICABLE("Nicht zutreffend"),
+    CONTINUOUS("Kontinuierlich"),
+    INTERMITTENT("Intermittierend");
 
     companion object {
         fun fromName(value: String): PainType = runCatching { valueOf(value) }.getOrDefault(CONTINUOUS)

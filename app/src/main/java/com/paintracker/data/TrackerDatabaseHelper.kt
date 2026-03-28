@@ -45,7 +45,11 @@ class TrackerDatabaseHelper(context: Context) :
             put(COL_ACTIVITIES, activities)
             put(COL_COMMENTS, comments)
         }
-        writableDatabase.insert(TABLE_ENTRIES, null, values)
+        val id = writableDatabase.insert(TABLE_ENTRIES, null, values)
+        if (id < 0) {
+            throw IllegalStateException("Insert into $TABLE_ENTRIES failed")
+        }
+        id
     }
 
     suspend fun getAllEntries(): List<TrackerEntry> = withContext(Dispatchers.IO) {

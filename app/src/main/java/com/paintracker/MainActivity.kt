@@ -59,9 +59,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.paintracker.R
 import com.paintracker.data.PainLevel
 import com.paintracker.data.PainType
 import com.paintracker.data.TrackerEntry
@@ -94,9 +96,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class RootTab(val title: String) {
-    ENTRY("New entry"),
-    HISTORY("History")
+private enum class RootTab {
+    ENTRY,
+    HISTORY
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,7 +118,7 @@ private fun AppRoot(viewModel: AppViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Pain & Mental State Tracker") })
+            TopAppBar(title = { Text(stringResource(R.string.title_app)) })
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
@@ -130,7 +132,14 @@ private fun AppRoot(viewModel: AppViewModel) {
                     Tab(
                         selected = selectedTab.ordinal == index,
                         onClick = { selectedTab = tab },
-                        text = { Text(tab.title) }
+                        text = {
+                            Text(
+                                when (tab) {
+                                    RootTab.ENTRY -> stringResource(R.string.tab_new_entry)
+                                    RootTab.HISTORY -> stringResource(R.string.tab_history)
+                                }
+                            )
+                        }
                     )
                 }
             }
@@ -174,6 +183,12 @@ private fun EntryTab(
     onExportSqlite: ((Intent) -> Unit) -> Unit
 ) {
     val context = LocalContext.current
+    val launchShareChooser: (Intent) -> Unit = { shareIntent ->
+        val chooser = Intent.createChooser(shareIntent, context.getString(R.string.export_chooser_title))
+        runCatching {
+            context.startActivity(chooser)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -181,7 +196,7 @@ private fun EntryTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Time: automatic (now)", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.label_time_auto_now), style = MaterialTheme.typography.titleMedium)
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
             Column(
@@ -190,26 +205,26 @@ private fun EntryTab(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Pain 1", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.label_pain_1), style = MaterialTheme.typography.titleSmall)
                 EnumDropdown(
-                    label = "Pain intensity",
+                    label = stringResource(R.string.label_pain_intensity),
                     selectedText = state.form.painLevel.display,
                     options = PainLevel.entries.map { it.display to it },
                     onSelect = onPainLevelChanged
                 )
 
-                Text("Pain 2", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.label_pain_2), style = MaterialTheme.typography.titleSmall)
                 EnumDropdown(
-                    label = "Pain type",
+                    label = stringResource(R.string.label_pain_type),
                     selectedText = state.form.painType.display,
-                    options = PainType.entries.map { it.display to it },
+                    options = painTypeOptions(state.form.painLevel),
                     onSelect = onPainTypeChanged
                 )
 
                 OutlinedTextField(
                     value = state.form.mentalState,
                     onValueChange = onMentalChanged,
-                    label = { Text("Mental state") },
+                    label = { Text(stringResource(R.string.label_mental_state)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
@@ -217,7 +232,7 @@ private fun EntryTab(
                 OutlinedTextField(
                     value = state.form.activities,
                     onValueChange = onActivitiesChanged,
-                    label = { Text("Activities of previous hours") },
+                    label = { Text(stringResource(R.string.label_previous_activities)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
@@ -225,13 +240,13 @@ private fun EntryTab(
                 OutlinedTextField(
                     value = state.form.comments,
                     onValueChange = onCommentsChanged,
-                    label = { Text("Comments") },
+                    label = { Text(stringResource(R.string.label_comments)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
 
                 Button(onClick = onSaveEntry, modifier = Modifier.fillMaxWidth()) {
-                    Text("Save entry")
+                    Text(stringResource(R.string.action_save_entry))
                 }
             }
         }
@@ -243,17 +258,17 @@ private fun EntryTab(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Reminders", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.section_reminders), style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = state.reminderInput,
                         onValueChange = onReminderInputChanged,
-                        label = { Text("HH:mm") },
+                        label = { Text(stringResource(R.string.label_reminder_time_hint)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
-                    Button(onClick = onAddReminder) { Text("Add") }
+                    Button(onClick = onAddReminder) { Text(stringResource(R.string.action_add)) }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.reminderTimes.forEach { time ->
@@ -262,7 +277,7 @@ private fun EntryTab(
                             label = { Text(time) },
                             trailingIcon = {
                                 TextButton(onClick = { onRemoveReminder(time) }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove")
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.content_desc_remove))
                                 }
                             }
                         )
@@ -278,16 +293,16 @@ private fun EntryTab(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Export", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.section_export), style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = { onExportCsv { intent -> context.startActivity(Intent.createChooser(intent, context.getString(R.string.export_chooser_title))) } },
+                        onClick = { onExportCsv(launchShareChooser) },
                         modifier = Modifier.weight(1f)
-                    ) { Text("Export CSV") }
+                    ) { Text(stringResource(R.string.action_export_csv)) }
                     Button(
-                        onClick = { onExportSqlite { intent -> context.startActivity(Intent.createChooser(intent, context.getString(R.string.export_chooser_title))) } },
+                        onClick = { onExportSqlite(launchShareChooser) },
                         modifier = Modifier.weight(1f)
-                    ) { Text("Export SQLite") }
+                    ) { Text(stringResource(R.string.action_export_sqlite)) }
                 }
             }
         }
@@ -308,7 +323,7 @@ private fun HistoryTab(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("No entries yet.")
+            Text(stringResource(R.string.empty_entries))
         }
         return
     }
@@ -337,12 +352,12 @@ private fun TableHeader() {
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
-        Cell("Time", 1.4f, true)
-        Cell("Pain 1", 0.8f, true)
-        Cell("Pain 2", 1.0f, true)
-        Cell("Mental", 1.5f, true)
-        Cell("Activities", 1.5f, true)
-        Cell("Comments", 1.5f, true)
+        Cell(stringResource(R.string.table_time), 1.4f, true)
+        Cell(stringResource(R.string.table_pain_1), 0.8f, true)
+        Cell(stringResource(R.string.table_pain_2), 1.0f, true)
+        Cell(stringResource(R.string.table_mental), 1.5f, true)
+        Cell(stringResource(R.string.table_activities), 1.5f, true)
+        Cell(stringResource(R.string.table_comments), 1.5f, true)
     }
 }
 
@@ -372,6 +387,17 @@ private fun RowScope.Cell(text: String, weight: Float, isHeader: Boolean) {
         style = if (isHeader) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodySmall,
         maxLines = 4
     )
+}
+
+private fun painTypeOptions(level: PainLevel): List<Pair<String, PainType>> {
+    return if (level == PainLevel.NONE) {
+        listOf(PainType.NOT_APPLICABLE.display to PainType.NOT_APPLICABLE)
+    } else {
+        listOf(
+            PainType.CONTINUOUS.display to PainType.CONTINUOUS,
+            PainType.INTERMITTENT.display to PainType.INTERMITTENT
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

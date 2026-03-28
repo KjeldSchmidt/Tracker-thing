@@ -2,6 +2,8 @@ package com.paintracker.ui
 
 import android.app.Application
 import android.content.Intent
+import android.content.res.Resources
+import android.content.pm.PackageManager
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +14,7 @@ import com.paintracker.data.TrackerDatabaseHelper
 import com.paintracker.data.TrackerEntry
 import com.paintracker.export.ExportManager
 import com.paintracker.reminders.ReminderScheduler
+import com.paintracker.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +28,7 @@ import java.io.File
 
 data class FormState(
     val painLevel: PainLevel = PainLevel.NONE,
-    val painType: PainType = PainType.CONTINUOUS,
+    val painType: PainType = PainType.NOT_APPLICABLE,
     val mentalState: String = "",
     val activities: String = "",
     val comments: String = ""
@@ -49,6 +52,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val reminderInput = MutableStateFlow("")
     private val message = MutableStateFlow<String?>(null)
 
+    private val resources: Resources = application.resources
     private val timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     val uiState: StateFlow<UiState> = combine(
@@ -85,10 +89,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updatePainLevel(value: PainLevel) {
-        formState.value = formState.value.copy(painLevel = value)
+        formState.value = when (value) {
+            PainLevel.NONE -> formState.value.copy(
+                painLevel = value,
+                painType = PainType.NOT_APPLICABLE
+            )
+            else -> {
+                val nextPainType = if (formState.value.painType == PainType.NOT_APPLICABLE) {
+                    PainType.CONTINUOUS
+                } else {
+                    formState.value.painType
+                }
+                formState.value.copy(painLevel = value, painType = nextPainType)
+            }
+        }
     }
 
     fun updatePainType(value: PainType) {
+        if (formState.value.painLevel == PainLevel.NONE) {
+            formState.value = formState.value.copy(painType = PainType.NOT_APPLICABLE)
+            return
+        }
         formState.value = formState.value.copy(painType = value)
     }
 
@@ -109,14 +130,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             db.insertEntry(
                 painLevel = current.painLevel,
-                painType = current.painType,
+                painType = if (current.painLevel == PainLevel.NONE) {
+                    PainType.NOT_APPLICABLE
+                } else {
+                    current.painType
+                },
                 mentalState = current.mentalState.trim(),
                 activities = current.activities.trim(),
                 comments = current.comments.trim()
             )
-            formState.value = FormState()
+            formState.value = FormState(painLevel = PainLevel.NONE, painType = PainType.NOT_APPLICABLE)
             refreshEntries()
-            message.value = "Entry saved"
+            message.value = resources.getString(R.string.message_entry_saved)
         }
     }
 
@@ -125,25 +150,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun addReminderTime() {
-        val value = reminderInput.value.trim()
-        if (!value.matches(Regex("""\d{2}:\d{2}"""))) {
-            message.value = "Use HH:mm format"
+        val normalized = normalizeReminderInput(reminderInput.value)
+        if (normalized == null) {
+            message.value = resources.getString(R.string.message_time_format_invalid)
             return
         }
-        val parts = value.split(":")
+        val parts = normalized.split(":")
         val hour = parts.getOrNull(0)?.toIntOrNull()
         val minute = parts.getOrNull(1)?.toIntOrNull()
         if (hour == null || minute == null || hour !in 0..23 || minute !in 0..59) {
-            message.value = "Invalid time"
+            message.value = resources.getString(R.string.message_time_invalid)
             return
         }
         viewModelScope.launch {
             val current = reminderRepository.readTimesOnce()
-            val updated = (current + value).distinct().sorted()
+            val updated = (current + normalized).distinct().sorted()
             reminderRepository.saveReminderTimes(updated)
             ReminderScheduler.scheduleAll(getApplication(), updated)
             reminderInput.value = ""
-            message.value = "Reminder added"
+            message.value = resources.getString(R.string.message_reminder_added)
         }
     }
 
@@ -152,7 +177,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val updated = reminderRepository.readTimesOnce().filterNot { it == value }
             reminderRepository.saveReminderTimes(updated)
             ReminderScheduler.scheduleAll(getApplication(), updated)
-            message.value = "Reminder removed"
+            message.value = resources.getString(R.string.message_reminder_removed)
         }
     }
 
@@ -160,9 +185,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val file = exportManager.exportCsv(db.getAllEntries())
             if (file == null) {
-                message.value = "CSV export failed"
+                message.value = resources.getString(R.string.message_export_csv_failed)
             } else {
-                onIntent(buildShareIntent(file, "text/csv"))
+                launchShareIntent(file, "text/csv", onIntent)
             }
         }
     }
@@ -171,10 +196,31 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val file = exportManager.exportSqliteCopy()
             if (file == null) {
-                message.value = "SQLite export failed"
+                message.value = resources.getString(R.string.message_export_sqlite_failed)
             } else {
-                onIntent(buildShareIntent(file, "application/octet-stream"))
+                launchShareIntent(file, "application/octet-stream", onIntent)
             }
+        }
+    }
+
+    private fun launchShareIntent(
+        file: File,
+        mimeType: String,
+        onIntent: (Intent) -> Unit
+    ) {
+        val intent = buildShareIntent(file, mimeType)
+        val context = getApplication<Application>()
+        val pm = context.packageManager
+        val hasTarget = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).isNotEmpty()
+        if (!hasTarget) {
+            message.value = resources.getString(R.string.message_no_share_app)
+            return
+        }
+        runCatching {
+            onIntent(intent)
+            message.value = resources.getString(R.string.message_export_started)
+        }.onFailure {
+            message.value = resources.getString(R.string.message_export_failed)
         }
     }
 
@@ -185,6 +231,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = android.content.ClipData.newUri(
+                context.contentResolver,
+                "export",
+                uri
+            )
         }
     }
 
@@ -200,5 +251,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun refreshEntries() {
         entries.value = db.getAllEntries()
+    }
+
+    private fun normalizeReminderInput(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return null
+        if (trimmed.matches(Regex("""\d{2}:\d{2}"""))) return trimmed
+        if (!trimmed.matches(Regex("""\d{4}"""))) return null
+        return "${trimmed.substring(0, 2)}:${trimmed.substring(2, 4)}"
     }
 }
