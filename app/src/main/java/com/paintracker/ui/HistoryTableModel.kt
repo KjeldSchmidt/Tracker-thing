@@ -1,5 +1,7 @@
 package com.paintracker.ui
 
+import com.paintracker.data.PainLevel
+import com.paintracker.data.PainType
 import com.paintracker.data.TrackerEntry
 
 enum class HistoryCell(val widthDp: Int) {
@@ -19,6 +21,19 @@ data class HistoryRow(
     val activities: String,
     val comments: String
 )
+
+data class HistoryFilter(
+    val painLevel: PainLevel? = null,
+    val painType: PainType? = null
+)
+
+fun List<TrackerEntry>.filterByHistory(filter: HistoryFilter): List<TrackerEntry> {
+    return filter { entry ->
+        val pain1Matches = filter.painLevel == null || entry.painLevel == filter.painLevel
+        val pain2Matches = filter.painType == null || entry.painType == filter.painType
+        pain1Matches && pain2Matches
+    }
+}
 
 fun List<TrackerEntry>.toHistoryRows(
     formatTime: (Long) -> String

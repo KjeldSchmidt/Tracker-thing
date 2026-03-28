@@ -8,21 +8,43 @@ import org.junit.Test
 
 class HistoryTableModelTest {
 
-    @Test
-    fun toHistoryTableRows_mapsAllFieldsInOrder() {
-        val entries = listOf(
+    private fun sampleEntries(): List<TrackerEntry> {
+        return listOf(
             TrackerEntry(
-                id = 7L,
+                id = 1L,
                 timestampEpochMillis = 1_700_000_000_000L,
+                painLevel = PainLevel.NONE,
+                painType = PainType.NOT_APPLICABLE,
+                mentalState = "Ruhig",
+                activitiesPreviousHours = "Lesen",
+                comments = "Kein Schmerz"
+            ),
+            TrackerEntry(
+                id = 2L,
+                timestampEpochMillis = 1_700_000_100_000L,
+                painLevel = PainLevel.MEDIUM,
+                painType = PainType.CONTINUOUS,
+                mentalState = "Konzentriert",
+                activitiesPreviousHours = "Arbeit",
+                comments = "Druckgefühl"
+            ),
+            TrackerEntry(
+                id = 3L,
+                timestampEpochMillis = 1_700_000_200_000L,
                 painLevel = PainLevel.MEDIUM,
                 painType = PainType.INTERMITTENT,
                 mentalState = "Unruhig",
                 activitiesPreviousHours = "Spazieren",
-                comments = "Abends stärker"
+                comments = "Stiche"
             )
         )
+    }
 
-        val rows = toHistoryRowModels(entries) { "2026-03-28 19:30" }
+    @Test
+    fun toHistoryRows_mapsAllFieldsInOrder() {
+        val entries = listOf(sampleEntries().last())
+
+        val rows = entries.toHistoryRows { "2026-03-28 19:30" }
 
         assertEquals(1, rows.size)
         val row = rows.first()
@@ -31,12 +53,44 @@ class HistoryTableModelTest {
         assertEquals("Intermittierend", row.pain2)
         assertEquals("Unruhig", row.mental)
         assertEquals("Spazieren", row.activities)
-        assertEquals("Abends stärker", row.comments)
+        assertEquals("Stiche", row.comments)
     }
 
     @Test
-    fun toHistoryRowModels_returnsEmptyForEmptyInput() {
-        val rows = toHistoryRowModels(emptyList()) { "unused" }
+    fun toHistoryRows_returnsEmptyForEmptyInput() {
+        val rows = emptyList<TrackerEntry>().toHistoryRows { "unused" }
         assertEquals(0, rows.size)
+    }
+
+    @Test
+    fun filterByHistory_filtersByPain1Only() {
+        val filtered = sampleEntries().filterByHistory(
+            HistoryFilter(painLevel = PainLevel.MEDIUM, painType = null)
+        )
+        assertEquals(listOf(2L, 3L), filtered.map { it.id })
+    }
+
+    @Test
+    fun filterByHistory_filtersByPain2Only() {
+        val filtered = sampleEntries().filterByHistory(
+            HistoryFilter(painLevel = null, painType = PainType.NOT_APPLICABLE)
+        )
+        assertEquals(listOf(1L), filtered.map { it.id })
+    }
+
+    @Test
+    fun filterByHistory_appliesPain1AndPain2AsAnd() {
+        val filtered = sampleEntries().filterByHistory(
+            HistoryFilter(painLevel = PainLevel.MEDIUM, painType = PainType.INTERMITTENT)
+        )
+        assertEquals(listOf(3L), filtered.map { it.id })
+    }
+
+    @Test
+    fun filterByHistory_allFiltersReturnsAllEntries() {
+        val filtered = sampleEntries().filterByHistory(
+            HistoryFilter(painLevel = null, painType = null)
+        )
+        assertEquals(listOf(1L, 2L, 3L), filtered.map { it.id })
     }
 }

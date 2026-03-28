@@ -68,8 +68,10 @@ import com.paintracker.data.PainType
 import com.paintracker.data.TrackerEntry
 import com.paintracker.ui.AppViewModel
 import com.paintracker.ui.HistoryCell
+import com.paintracker.ui.HistoryFilter
 import com.paintracker.ui.HistoryRow
 import com.paintracker.ui.UiState
+import com.paintracker.ui.filterByHistory
 import com.paintracker.ui.toHistoryRows
 import com.paintracker.ui.theme.PainTrackerTheme
 
@@ -322,26 +324,70 @@ private fun HistoryTab(
     entries: List<TrackerEntry>,
     formatTime: (Long) -> String
 ) {
-    if (entries.isEmpty()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(stringResource(R.string.empty_entries))
-        }
-        return
+    var selectedPain1FilterName by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPain2FilterName by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val selectedPain1Filter = selectedPain1FilterName?.let(PainLevel::fromName)
+    val selectedPain2Filter = selectedPain2FilterName?.let(PainType::fromName)
+
+    val pain1Options: List<Pair<String, PainLevel?>> = listOf(
+        stringResource(R.string.filter_all) to null
+    ) + PainLevel.entries.map { it.display to it }
+    val pain2Options: List<Pair<String, PainType?>> = listOf(
+        stringResource(R.string.filter_all) to null
+    ) + PainType.entries.map { it.display to it }
+
+    val filteredEntries = remember(entries, selectedPain1Filter, selectedPain2Filter) {
+        entries.filterByHistory(
+            HistoryFilter(
+                painLevel = selectedPain1Filter,
+                painType = selectedPain2Filter
+            )
+        )
     }
 
     val horizontalScroll = rememberScrollState()
-    val rows = remember(entries, formatTime) { entries.toHistoryRows(formatTime) }
+    val rows = remember(filteredEntries, formatTime) {
+        filteredEntries.toHistoryRows(formatTime)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            EnumDropdown(
+                label = stringResource(R.string.filter_pain_1),
+                selectedText = selectedPain1Filter?.display ?: stringResource(R.string.filter_all),
+                options = pain1Options,
+                onSelect = { selectedPain1FilterName = it?.name }
+            )
+            EnumDropdown(
+                label = stringResource(R.string.filter_pain_2),
+                selectedText = selectedPain2Filter?.display ?: stringResource(R.string.filter_all),
+                options = pain2Options,
+                onSelect = { selectedPain2FilterName = it?.name }
+            )
+        }
+
+        if (entries.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(stringResource(R.string.empty_entries))
+            }
+            return@Column
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -356,9 +402,21 @@ private fun HistoryTab(
                 .fillMaxSize()
                 .horizontalScroll(horizontalScroll)
         ) {
-            items(rows.size) { index ->
-                TableRow(row = rows[index])
-                Divider()
+            if (rows.isEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                    ) {
+                        Text(stringResource(R.string.empty_entries_filtered))
+                    }
+                }
+            } else {
+                items(rows.size) { index ->
+                    TableRow(row = rows[index])
+                    Divider()
+                }
             }
         }
     }
