@@ -13,7 +13,7 @@ Android app to record pain alongside mental state and recent activities.
 - Configurable daily reminder times directly in the app (no code changes needed)
 - History screen showing all previous entries in a table-like layout
 - Data export:
-  - CSV export (share/send the generated file)
+  - CSV export with `;` separator (share/send the generated file, Excel-friendly)
   - SQLite export (share/send the DB copy)
 - Reminder scheduling restored on reboot/time change
 

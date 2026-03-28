@@ -23,9 +23,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.format.FormatStyle
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.io.File
+import java.util.Locale
 
 data class FormState(
     val painLevel: PainLevel = PainLevel.NONE,
@@ -54,7 +56,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val message = MutableStateFlow<String?>(null)
 
     private val resources: Resources = application.resources
-    private val timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    private val timestampFormatter: DateTimeFormatter =
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
 
     val uiState: StateFlow<UiState> = combine(
         entries,

@@ -7,19 +7,22 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.Instant
+import java.time.format.FormatStyle
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class ExportManager(private val context: Context) {
     private val formatter: DateTimeFormatter =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+        DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withZone(ZoneId.systemDefault())
 
     fun exportCsv(entries: List<TrackerEntry>): File? {
         val outFile = File(context.cacheDir, "pain_tracker_export.csv")
         return runCatching {
             outFile.bufferedWriter().use { writer ->
                 writer.appendLine(
-                    "id,time,pain_level,pain_type,mental_state,activities_previous_hours,comments"
+                    "id;time;pain_level;pain_type;mental_state;activities_previous_hours;comments"
                 )
                 entries.forEach { entry ->
                     writer.appendLine(
@@ -31,7 +34,7 @@ class ExportManager(private val context: Context) {
                             csvEscape(entry.mentalState),
                             csvEscape(entry.activitiesPreviousHours),
                             csvEscape(entry.comments)
-                        ).joinToString(",")
+                        ).joinToString(";")
                     )
                 }
             }
