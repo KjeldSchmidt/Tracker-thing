@@ -38,3 +38,5 @@ A GitHub Actions workflow is included at:
 `.github/workflows/android-apk.yml`
 
 It builds the debug APK on pushes/PRs and uploads it as an artifact.
+On `push` runs it also creates a GitHub **prerelease** and attaches the APK,
+which gives a public download link for each run.
