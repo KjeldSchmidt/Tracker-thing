@@ -22,6 +22,7 @@ object ReminderScheduler {
             val minute = parts[1].toIntOrNull() ?: return@forEachIndexed
 
             val pending = reminderIntent(context, index, PendingIntent.FLAG_UPDATE_CURRENT)
+                ?: return@forEachIndexed
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 nextTriggerMillis(hour, minute),
