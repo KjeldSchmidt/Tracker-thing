@@ -78,7 +78,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
-            refreshEntries()
+            refreshEntries(showError = false)
             ReminderScheduler.scheduleAll(getApplication(), reminderRepository.readTimesOnce())
         }
     }
