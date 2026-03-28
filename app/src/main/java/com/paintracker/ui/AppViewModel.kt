@@ -1,6 +1,7 @@
 package com.paintracker.ui
 
 import android.app.Application
+import android.content.ClipData
 import android.content.Intent
 import android.content.res.Resources
 import android.content.pm.PackageManager
@@ -128,20 +129,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun saveEntry() {
         val current = formState.value
         viewModelScope.launch {
-            db.insertEntry(
-                painLevel = current.painLevel,
-                painType = if (current.painLevel == PainLevel.NONE) {
-                    PainType.NOT_APPLICABLE
-                } else {
-                    current.painType
-                },
-                mentalState = current.mentalState.trim(),
-                activities = current.activities.trim(),
-                comments = current.comments.trim()
-            )
-            formState.value = FormState(painLevel = PainLevel.NONE, painType = PainType.NOT_APPLICABLE)
-            refreshEntries()
-            message.value = resources.getString(R.string.message_entry_saved)
+            runCatching {
+                db.insertEntry(
+                    painLevel = current.painLevel,
+                    painType = if (current.painLevel == PainLevel.NONE) {
+                        PainType.NOT_APPLICABLE
+                    } else {
+                        current.painType
+                    },
+                    mentalState = current.mentalState.trim(),
+                    activities = current.activities.trim(),
+                    comments = current.comments.trim()
+                )
+            }.onSuccess {
+                formState.value = FormState(painLevel = PainLevel.NONE, painType = PainType.NOT_APPLICABLE)
+                refreshEntries(showError = false)
+                message.value = resources.getString(R.string.message_entry_saved)
+            }.onFailure {
+                message.value = resources.getString(R.string.message_entry_save_failed)
+            }
         }
     }
 
@@ -231,7 +237,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = android.content.ClipData.newUri(
+            clipData = ClipData.newUri(
                 context.contentResolver,
                 "export",
                 uri
@@ -243,14 +249,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         message.value = null
     }
 
+    fun reloadEntries() {
+        viewModelScope.launch {
+            refreshEntries(showError = true)
+        }
+    }
+
     fun formatTime(epochMillis: Long): String {
         return Instant.ofEpochMilli(epochMillis)
             .atZone(ZoneId.systemDefault())
             .format(timestampFormatter)
     }
 
-    private suspend fun refreshEntries() {
-        entries.value = db.getAllEntries()
+    private suspend fun refreshEntries(showError: Boolean) {
+        runCatching { db.getAllEntries() }
+            .onSuccess { entries.value = it }
+            .onFailure {
+                if (showError) {
+                    message.value = resources.getString(R.string.message_entries_load_failed)
+                }
+            }
     }
 
     private fun normalizeReminderInput(raw: String): String? {

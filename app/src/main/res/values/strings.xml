@@ -40,6 +40,7 @@
     <string name="table_comments">Kommentare</string>
 
     <string name="message_entry_saved">Eintrag gespeichert</string>
+    <string name="message_entry_save_failed">Eintrag konnte nicht gespeichert werden</string>
     <string name="message_time_format_invalid">Uhrzeit im Format HH:mm oder HHmm eingeben</string>
     <string name="message_time_invalid">Ungültige Uhrzeit</string>
     <string name="message_reminder_added">Erinnerung hinzugefügt</string>
@@ -49,4 +50,5 @@
     <string name="message_no_share_app">Keine App zum Teilen gefunden</string>
     <string name="message_export_started">Export gestartet</string>
     <string name="message_export_failed">Export fehlgeschlagen</string>
+    <string name="message_entries_load_failed">Verlauf konnte nicht geladen werden</string>
 </resources>

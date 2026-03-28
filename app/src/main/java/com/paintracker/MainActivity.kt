@@ -160,7 +160,12 @@ private fun AppRoot(viewModel: AppViewModel) {
                     onExportSqlite = viewModel::exportSqliteFromActivity
                 )
 
-                RootTab.HISTORY -> HistoryTab(entries = state.entries, formatTime = viewModel::formatTime)
+                RootTab.HISTORY -> {
+                    LaunchedEffect(selectedTab) {
+                        viewModel.reloadEntries()
+                    }
+                    HistoryTab(entries = state.entries, formatTime = viewModel::formatTime)
+                }
             }
         }
     }
@@ -328,19 +333,19 @@ private fun HistoryTab(
         return
     }
 
+    val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(verticalScroll)
+            .horizontalScroll(horizontalScroll)
+    ) {
         TableHeader()
         Divider()
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .horizontalScroll(horizontalScroll)
-        ) {
-            items(entries, key = { it.id }) { entry ->
-                TableRow(entry = entry, formatTime = formatTime)
-                Divider()
-            }
+        entries.forEach { entry ->
+            TableRow(entry = entry, formatTime = formatTime)
+            Divider()
         }
     }
 }
