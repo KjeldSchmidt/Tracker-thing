@@ -15,13 +15,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -68,7 +67,10 @@ import com.paintracker.data.PainLevel
 import com.paintracker.data.PainType
 import com.paintracker.data.TrackerEntry
 import com.paintracker.ui.AppViewModel
+import com.paintracker.ui.HistoryCell
+import com.paintracker.ui.HistoryRow
 import com.paintracker.ui.UiState
+import com.paintracker.ui.toHistoryRows
 import com.paintracker.ui.theme.PainTrackerTheme
 
 class MainActivity : ComponentActivity() {
@@ -333,64 +335,82 @@ private fun HistoryTab(
         return
     }
 
-    val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
+    val rows = remember(entries, formatTime) { entries.toHistoryRows(formatTime) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(verticalScroll)
-            .horizontalScroll(horizontalScroll)
     ) {
-        TableHeader()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(horizontalScroll)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            TableHeader()
+        }
         Divider()
-        entries.forEach { entry ->
-            TableRow(entry = entry, formatTime = formatTime)
-            Divider()
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .horizontalScroll(horizontalScroll)
+        ) {
+            items(rows.size) { index ->
+                TableRow(row = rows[index])
+                Divider()
+            }
         }
     }
 }
 
 @Composable
 private fun TableHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 8.dp)
-    ) {
-        Cell(stringResource(R.string.table_time), 1.4f, true)
-        Cell(stringResource(R.string.table_pain_1), 0.8f, true)
-        Cell(stringResource(R.string.table_pain_2), 1.0f, true)
-        Cell(stringResource(R.string.table_mental), 1.5f, true)
-        Cell(stringResource(R.string.table_activities), 1.5f, true)
-        Cell(stringResource(R.string.table_comments), 1.5f, true)
-    }
+    HeaderCell(stringResource(R.string.table_time), HistoryCell.TIME.widthDp)
+    HeaderCell(stringResource(R.string.table_pain_1), HistoryCell.PAIN_1.widthDp)
+    HeaderCell(stringResource(R.string.table_pain_2), HistoryCell.PAIN_2.widthDp)
+    HeaderCell(stringResource(R.string.table_mental), HistoryCell.MENTAL.widthDp)
+    HeaderCell(stringResource(R.string.table_activities), HistoryCell.ACTIVITIES.widthDp)
+    HeaderCell(stringResource(R.string.table_comments), HistoryCell.COMMENTS.widthDp)
 }
 
 @Composable
-private fun TableRow(entry: TrackerEntry, formatTime: (Long) -> String) {
+private fun TableRow(row: HistoryRow) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 10.dp)
     ) {
-        Cell(formatTime(entry.timestampEpochMillis), 1.4f, false)
-        Cell(entry.painLevel.display, 0.8f, false)
-        Cell(entry.painType.display, 1.0f, false)
-        Cell(entry.mentalState, 1.5f, false)
-        Cell(entry.activitiesPreviousHours, 1.5f, false)
-        Cell(entry.comments, 1.5f, false)
+        DataCell(row.time, HistoryCell.TIME.widthDp)
+        DataCell(row.pain1, HistoryCell.PAIN_1.widthDp)
+        DataCell(row.pain2, HistoryCell.PAIN_2.widthDp)
+        DataCell(row.mental, HistoryCell.MENTAL.widthDp)
+        DataCell(row.activities, HistoryCell.ACTIVITIES.widthDp)
+        DataCell(row.comments, HistoryCell.COMMENTS.widthDp)
     }
 }
 
 @Composable
-private fun RowScope.Cell(text: String, weight: Float, isHeader: Boolean) {
+private fun HeaderCell(text: String, widthDp: Int) {
     Text(
         text = text,
         modifier = Modifier
-            .weight(weight)
+            .width(widthDp.dp)
             .padding(horizontal = 4.dp),
-        style = if (isHeader) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodySmall,
-        maxLines = 4
+        style = MaterialTheme.typography.titleSmall,
+        maxLines = 3
+    )
+}
+
+@Composable
+private fun DataCell(text: String, widthDp: Int) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .width(widthDp.dp)
+            .padding(horizontal = 4.dp),
+        style = MaterialTheme.typography.bodySmall,
+        maxLines = 6
     )
 }
 
