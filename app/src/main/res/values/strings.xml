@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pain Tracker</string>
+    <string name="notification_channel_name">Pain reminders</string>
+    <string name="notification_channel_description">Reminders to record pain and mental state</string>
+    <string name="notification_title">Pain tracker reminder</string>
+    <string name="notification_body">Time to create a new entry.</string>
+    <string name="export_chooser_title">Export data</string>
+</resources>
