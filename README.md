@@ -40,3 +40,8 @@ A GitHub Actions workflow is included at:
 It builds the debug APK on pushes/PRs and uploads it as an artifact.
 On `push` runs it also creates a GitHub **prerelease** and attaches the APK,
 which gives a public download link for each run.
+
+## In-place app updates (keep local history)
+- The app is signed with a stable project keystore configuration so Android can install new APKs as updates.
+- CI sets `versionCode` from `github.run_number` (`CI_VERSION_CODE`), so each build is upgradeable.
+- As long as installs come from this pipeline/build chain, users should not need uninstall/reinstall.

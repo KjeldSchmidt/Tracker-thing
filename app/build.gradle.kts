@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,19 +9,40 @@ android {
     namespace = "com.paintracker"
     compileSdk = 34
 
+    val signingProps = Properties()
+    val signingPropsFile = rootProject.file("app/signing/signing.properties")
+    if (signingPropsFile.exists()) {
+        signingPropsFile.inputStream().use { signingProps.load(it) }
+    }
+    val ciVersionCode = System.getenv("CI_VERSION_CODE")?.toIntOrNull()
+
     defaultConfig {
         applicationId = "com.paintracker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = ciVersionCode ?: 1
+        versionName = "1.0.${ciVersionCode ?: 1}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("stable") {
+            val relativeStoreFile = signingProps.getProperty("storeFile", "signing/release-keystore.jks")
+            storeFile = rootProject.file("app/$relativeStoreFile")
+            storePassword = signingProps.getProperty("storePassword", "")
+            keyAlias = signingProps.getProperty("keyAlias", "")
+            keyPassword = signingProps.getProperty("keyPassword", "")
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("stable")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("stable")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
