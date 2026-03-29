@@ -1,8 +1,8 @@
 # Pain & Mental State Tracker (Android)
 
-⚠️ This Repository has been 100% created by Cursor running Codex 5.3 High.
-⚠️ No human has written a single line of code. This was a custom experiment
-⚠️ for a friend. Use and Copy with care
+⚠️ This Repository has been 100% created by Cursor running Codex 5.3 High.  
+⚠️ No human has written a single line of code. This was a custom experiment  
+⚠️ for a friend. Use and Copy with care  
 
 ## Pain Tracking Features
 
