@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -495,6 +496,7 @@ private fun TableHeader() {
     HeaderCell(stringResource(R.string.table_comments), HistoryCell.COMMENTS.widthDp)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TableRow(
     row: HistoryRow,
