@@ -55,4 +55,15 @@
     <string name="message_export_started">Export gestartet</string>
     <string name="message_export_failed">Export fehlgeschlagen</string>
     <string name="message_entries_load_failed">Verlauf konnte nicht geladen werden</string>
+    <string name="message_entry_updated">Eintrag aktualisiert</string>
+    <string name="message_entry_update_failed">Eintrag konnte nicht aktualisiert werden</string>
+    <string name="message_entry_deleted">Eintrag gelöscht</string>
+    <string name="message_entry_delete_failed">Eintrag konnte nicht gelöscht werden</string>
+    <string name="history_row_actions_title">Eintrag-Aktionen</string>
+    <string name="history_row_actions_text">Was möchten Sie mit diesem Eintrag tun?</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_save">Speichern</string>
+    <string name="edit_entry_title">Eintrag bearbeiten</string>
 </resources>

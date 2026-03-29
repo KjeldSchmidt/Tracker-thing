@@ -14,6 +14,7 @@ enum class HistoryCell(val widthDp: Int) {
 }
 
 data class HistoryRow(
+    val id: Long,
     val time: String,
     val pain1: String,
     val pain2: String,
@@ -40,6 +41,7 @@ fun List<TrackerEntry>.toHistoryRows(
 ): List<HistoryRow> {
     return map { entry ->
         HistoryRow(
+            id = entry.id,
             time = formatTime(entry.timestampEpochMillis),
             pain1 = entry.painLevel.display,
             pain2 = entry.painType.display,

@@ -45,6 +45,15 @@ data class UiState(
     val message: String? = null
 )
 
+data class EditState(
+    val entryId: Long = 0L,
+    val painLevel: PainLevel = PainLevel.NONE,
+    val painType: PainType = PainType.NOT_APPLICABLE,
+    val mentalState: String = "",
+    val activities: String = "",
+    val comments: String = ""
+)
+
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val db = TrackerDatabaseHelper(application)
     private val reminderRepository = ReminderRepository(application)
@@ -54,6 +63,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val formState = MutableStateFlow(FormState())
     private val reminderInput = MutableStateFlow("")
     private val message = MutableStateFlow<String?>(null)
+    private val entryToEdit = MutableStateFlow<EditState?>(null)
 
     private val resources: Resources = application.resources
     private val timestampFormatter: DateTimeFormatter =
@@ -79,6 +89,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         SharingStarted.WhileSubscribed(5_000),
         UiState()
     )
+
+    val currentEntryToEdit: StateFlow<EditState?> = entryToEdit
 
     init {
         viewModelScope.launch {
@@ -256,6 +268,106 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun reloadEntries() {
         viewModelScope.launch {
             refreshEntries(showError = true)
+        }
+    }
+
+    fun startEditEntry(entry: TrackerEntry) {
+        entryToEdit.value = EditState(
+            entryId = entry.id,
+            painLevel = entry.painLevel,
+            painType = entry.painType,
+            mentalState = entry.mentalState,
+            activities = entry.activitiesPreviousHours,
+            comments = entry.comments
+        )
+    }
+
+    fun dismissEditEntry() {
+        entryToEdit.value = null
+    }
+
+    fun updateEditPainLevel(value: PainLevel) {
+        val current = entryToEdit.value ?: return
+        entryToEdit.value = when (value) {
+            PainLevel.NONE -> current.copy(
+                painLevel = value,
+                painType = PainType.NOT_APPLICABLE
+            )
+            else -> {
+                val nextPainType = if (current.painType == PainType.NOT_APPLICABLE) {
+                    PainType.CONTINUOUS
+                } else {
+                    current.painType
+                }
+                current.copy(painLevel = value, painType = nextPainType)
+            }
+        }
+    }
+
+    fun updateEditPainType(value: PainType) {
+        val current = entryToEdit.value ?: return
+        if (current.painLevel == PainLevel.NONE) {
+            entryToEdit.value = current.copy(painType = PainType.NOT_APPLICABLE)
+            return
+        }
+        entryToEdit.value = current.copy(painType = value)
+    }
+
+    fun updateEditMentalState(value: String) {
+        val current = entryToEdit.value ?: return
+        entryToEdit.value = current.copy(mentalState = value)
+    }
+
+    fun updateEditActivities(value: String) {
+        val current = entryToEdit.value ?: return
+        entryToEdit.value = current.copy(activities = value)
+    }
+
+    fun updateEditComments(value: String) {
+        val current = entryToEdit.value ?: return
+        entryToEdit.value = current.copy(comments = value)
+    }
+
+    fun saveEditedEntry() {
+        val current = entryToEdit.value ?: return
+        viewModelScope.launch {
+            runCatching {
+                val finalPainType = if (current.painLevel == PainLevel.NONE) {
+                    PainType.NOT_APPLICABLE
+                } else {
+                    current.painType
+                }
+                db.updateEntry(
+                    id = current.entryId,
+                    painLevel = current.painLevel,
+                    painType = finalPainType,
+                    mentalState = current.mentalState.trim(),
+                    activities = current.activities.trim(),
+                    comments = current.comments.trim()
+                )
+            }.onSuccess {
+                entryToEdit.value = null
+                refreshEntries(showError = false)
+                message.value = resources.getString(R.string.message_entry_updated)
+            }.onFailure {
+                message.value = resources.getString(R.string.message_entry_update_failed)
+            }
+        }
+    }
+
+    fun deleteEntry(entry: TrackerEntry) {
+        viewModelScope.launch {
+            runCatching {
+                db.deleteEntry(entry.id)
+            }.onSuccess {
+                if (entryToEdit.value?.entryId == entry.id) {
+                    entryToEdit.value = null
+                }
+                refreshEntries(showError = false)
+                message.value = resources.getString(R.string.message_entry_deleted)
+            }.onFailure {
+                message.value = resources.getString(R.string.message_entry_delete_failed)
+            }
         }
     }
 

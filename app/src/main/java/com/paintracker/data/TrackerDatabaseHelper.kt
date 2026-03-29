@@ -87,6 +87,37 @@ class TrackerDatabaseHelper(context: Context) :
         list
     }
 
+    suspend fun updateEntry(
+        id: Long,
+        painLevel: PainLevel,
+        painType: PainType,
+        mentalState: String,
+        activities: String,
+        comments: String
+    ): Int = withContext(Dispatchers.IO) {
+        val values = ContentValues().apply {
+            put(COL_PAIN_LEVEL, painLevel.name)
+            put(COL_PAIN_TYPE, painType.name)
+            put(COL_MENTAL_STATE, mentalState)
+            put(COL_ACTIVITIES, activities)
+            put(COL_COMMENTS, comments)
+        }
+        writableDatabase.update(
+            TABLE_ENTRIES,
+            values,
+            "$COL_ID = ?",
+            arrayOf(id.toString())
+        )
+    }
+
+    suspend fun deleteEntry(id: Long): Int = withContext(Dispatchers.IO) {
+        writableDatabase.delete(
+            TABLE_ENTRIES,
+            "$COL_ID = ?",
+            arrayOf(id.toString())
+        )
+    }
+
     companion object {
         const val DB_NAME = "pain_tracker.db"
         private const val DB_VERSION = 1
