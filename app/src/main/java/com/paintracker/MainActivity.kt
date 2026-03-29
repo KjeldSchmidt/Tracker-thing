@@ -355,11 +355,11 @@ private fun HistoryTab(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             EnumDropdown(
                 label = stringResource(R.string.filter_pain_1),
